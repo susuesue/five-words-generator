@@ -28,11 +28,13 @@ UPLOAD_DIR.mkdir(exist_ok=True)
 # DeepSeek API
 DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY")
 DEEPSEEK_API_URL = "https://api.deepseek.com/v1/chat/completions"
+DEEPSEEK_BASE_URL = "https://api.deepseek.com/v1"  # API基础URL
 DEEPSEEK_MODEL = "deepseek-chat"
 
 # API 超时设置（秒）
 API_TIMEOUT_CONNECT = 5  # 连接超时
 API_TIMEOUT_READ = 25    # 读取超时
+API_TIMEOUT = 120  # 总超时时间
 
 # API 重试设置
 API_RETRY_TOTAL = 2           # 重试次数
@@ -134,3 +136,31 @@ if __name__ != "__main__":
     except RuntimeError as e:
         print(f"配置错误：{e}")
 
+
+# ==================== Config 类（用于兼容） ====================
+
+class Config:
+    """配置类，提供便捷的配置访问"""
+    
+    def __init__(self):
+        """初始化配置"""
+        # API配置
+        self.DEEPSEEK_API_KEY = DEEPSEEK_API_KEY
+        self.DEEPSEEK_BASE_URL = DEEPSEEK_BASE_URL
+        self.DEEPSEEK_MODEL = DEEPSEEK_MODEL
+        self.API_TIMEOUT = API_TIMEOUT
+        
+        # 路径配置
+        self.BASE_DIR = BASE_DIR
+        self.LOG_DIR = LOG_DIR
+        self.UPLOAD_DIR = UPLOAD_DIR
+        
+        # 文件处理配置
+        self.SUPPORTED_FORMATS = SUPPORTED_FORMATS
+        self.MAX_FILE_SIZE = MAX_FILE_SIZE
+        self.MAX_PDF_PAGES = MAX_PDF_PAGES
+        self.MAX_DOCX_PARAGRAPHS = MAX_DOCX_PARAGRAPHS
+        self.MAX_XLSX_ROWS = MAX_XLSX_ROWS
+        self.MAX_TXT_CHARS = MAX_TXT_CHARS
+        self.MAX_PPTX_SLIDES = MAX_PPTX_SLIDES
+        self.MAX_COMBINED_TEXT = MAX_COMBINED_TEXT

@@ -47,8 +47,24 @@ def extract_text(file_path: str) -> str:
         
         elif suffix == ".xlsx":
             df = pd.read_excel(file_path, sheet_name=0, engine='openpyxl', nrows=MAX_XLSX_ROWS)
-            result = df.to_string(index=False)
-            logger.info(f"XLSX 文本提取完成: 读取 {len(df)} 行，字符数: {len(result)}")
+            
+            # 格式化Excel问卷数据
+            text_parts = []
+            text_parts.append(f"问卷字段：{', '.join(df.columns.tolist())}")
+            text_parts.append("\n" + "="*50 + "\n")
+            
+            # 遍历每一行（每个问卷记录）
+            for idx, row in df.iterrows():
+                text_parts.append(f"\n【问卷记录 {idx + 1}】")
+                for col in df.columns:
+                    value = row[col]
+                    # 过滤空值和"无"
+                    if pd.notna(value) and str(value).strip() and str(value).strip() != '无':
+                        text_parts.append(f"{col}: {value}")
+                text_parts.append("")
+            
+            result = '\n'.join(text_parts)
+            logger.info(f"XLSX 文本提取完成: 读取 {len(df)} 行，{len(df.columns)} 列，字符数: {len(result)}")
             return result
         
         elif suffix == ".txt":
