@@ -13,7 +13,7 @@ from ..utils.logger import get_logger
 
 logger = get_logger(__name__)
 
-
+print('开始提取需求欧耶')
 class NeedsExtractor:
     """五大需求提取器"""
     
