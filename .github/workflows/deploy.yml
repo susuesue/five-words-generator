@@ -1,0 +1,23 @@
+name: 自动部署到阿里云
+
+on:
+  push:
+    branches: [ main ]  # 改成你的默认分支名
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 拉取代码
+        uses: actions/checkout@v3
+      
+      - name: 连接服务器并部署
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.ALIYUN_HOST }}
+          username: ${{ secrets.ALIYUN_USER }}
+          key: ${{ secrets.ALIYUN_SSH_KEY }}
+          script: |
+            cd /var/www/rag-system/five-words-generator
+            ./deploy.sh
