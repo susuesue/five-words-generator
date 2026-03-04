@@ -20,30 +20,30 @@ from .config import (
 def setup_logger(name: str = __name__) -> logging.Logger:
     """
     创建并配置日志记录器
-    
+
     Args:
         name: 日志记录器名称
-        
+
     Returns:
         配置好的日志记录器
     """
     logger = logging.getLogger(name)
-    
+
     # 避免重复添加处理器
     if logger.handlers:
         return logger
-    
+
     logger.setLevel(LOG_LEVEL)
-    
+
     # 创建格式化器
     formatter = logging.Formatter(LOG_FORMAT, LOG_DATE_FORMAT)
-    
+
     # 控制台处理器
     console_handler = logging.StreamHandler(sys.stdout)
     console_handler.setLevel(logging.INFO)
     console_handler.setFormatter(formatter)
     logger.addHandler(console_handler)
-    
+
     # 文件处理器（所有日志）
     file_handler = RotatingFileHandler(
         LOG_FILE,
@@ -54,7 +54,7 @@ def setup_logger(name: str = __name__) -> logging.Logger:
     file_handler.setLevel(logging.DEBUG)
     file_handler.setFormatter(formatter)
     logger.addHandler(file_handler)
-    
+
     # 错误文件处理器（只记录错误）
     error_handler = RotatingFileHandler(
         LOG_ERROR_FILE,
@@ -65,21 +65,21 @@ def setup_logger(name: str = __name__) -> logging.Logger:
     error_handler.setLevel(logging.ERROR)
     error_handler.setFormatter(formatter)
     logger.addHandler(error_handler)
-    
+
     return logger
 
 
 # 创建默认日志记录器
-logger = setup_logger("three_words_generator")
+logger = setup_logger("five_needs_extractor")
 
 
 def get_logger(name: str = None) -> logging.Logger:
     """
     获取日志记录器
-    
+
     Args:
         name: 日志记录器名称，默认使用调用者的模块名
-        
+
     Returns:
         日志记录器
     """
@@ -87,7 +87,7 @@ def get_logger(name: str = None) -> logging.Logger:
         import inspect
         frame = inspect.currentframe().f_back
         name = frame.f_globals.get('__name__', 'unknown')
-    
+
     return setup_logger(name)
 
 
@@ -99,5 +99,3 @@ if __name__ == "__main__":
     test_logger.warning("这是一条 WARNING 消息")
     test_logger.error("这是一条 ERROR 消息")
     test_logger.critical("这是一条 CRITICAL 消息")
-
-

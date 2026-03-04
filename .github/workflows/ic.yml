@@ -20,7 +20,7 @@ jobs:
           pip install pytest flake8
       
       - name: 代码风格检查
-        run: flake8 rag_qa/ --max-line-length=120 --exit-zero
+        run: flake8 src/ tests/ --max-line-length=120 --exit-zero
       
       - name: 运行测试
-        run: pytest tests/ -v || true
+        run: pytest tests/ -v

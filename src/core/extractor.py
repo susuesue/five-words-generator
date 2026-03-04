@@ -6,17 +6,17 @@
 
 import re
 import json
-from typing import Dict, List
+from typing import Dict
 import requests
 from ..utils.config import Config
 from ..utils.logger import get_logger
 
 logger = get_logger(__name__)
 
-print('开始提取需求欧耶')
+
 class NeedsExtractor:
     """五大需求提取器"""
-    
+
     # 五大主题定义
     THEMES = {
         "融资": "与资金、投资、融资、财务相关的需求",
@@ -25,7 +25,7 @@ class NeedsExtractor:
         "人才": "与人才招聘、人才培养、团队建设相关的需求",
         "媒体": "与宣传推广、媒体报道、品牌建设相关的需求"
     }
-    
+
     def __init__(self):
         """初始化提取器"""
         self.config = Config()
@@ -33,14 +33,14 @@ class NeedsExtractor:
         # 禁用代理，避免代理连接错误
         self.session.trust_env = False
         logger.info("五大需求提取器初始化成功")
-    
+
     def extract(self, questionnaire_content: str) -> Dict[str, str]:
         """
         从问卷内容中提取五大主题需求
-        
+
         Args:
             questionnaire_content: 问卷文本内容
-            
+
         Returns:
             dict: {
                 "融资": "需求描述文字。",
@@ -54,38 +54,38 @@ class NeedsExtractor:
         logger.info("开始提取五大需求")
         logger.info("="*70)
         logger.debug(f"问卷内容长度: {len(questionnaire_content)} 字符")
-        
+
         # 构建提示词
         prompt = self._build_prompt(questionnaire_content)
-        
+
         try:
             # 调用AI提取需求
             logger.info("🤖 调用AI分析问卷...")
             response = self._call_api(prompt)
-            
+
             # 解析结果
             needs_dict = self._parse_response(response)
-            
+
             # 确保所有主题都存在
             result = {}
             for theme in self.THEMES.keys():
                 result[theme] = needs_dict.get(theme, "")
-            
+
             # 统计信息
             themes_with_needs = [k for k, v in result.items() if v]
-            
+
             logger.info("="*70)
-            logger.info(f"✅ 提取完成")
+            logger.info("✅ 提取完成")
             logger.info(f"   涉及 {len(themes_with_needs)} 个主题: {', '.join(themes_with_needs)}")
             logger.info("="*70)
-            
+
             return result
-            
+
         except Exception as e:
             logger.error(f"❌ 提取需求失败: {str(e)}", exc_info=True)
             # 返回空结果
             return {theme: "" for theme in self.THEMES.keys()}
-    
+
     def _build_prompt(self, questionnaire_content: str) -> str:
         """构建AI提示词"""
         return f"""你是一位擅长需求提炼的分析专家。请根据Excel问卷表格，用一句话分别概括其在融资、产业、人才、技术、媒体方面的核心需求，突出项目"缺什么"和"要什么"。
@@ -232,26 +232,41 @@ class NeedsExtractor:
 ✅ 必须直接写："需求内容。"（字符串，不是列表）
 ✅ 每句话末尾必须有句号 "。"
 ✅ 句子开头直接是内容，不要任何数字或符号前缀"""
-    
+
     def _call_api(self, prompt: str) -> str:
         """调用DeepSeek API"""
         url = f"{self.config.DEEPSEEK_BASE_URL}/chat/completions"
-        
+
         payload = {
             "model": self.config.DEEPSEEK_MODEL,
             "messages": [
-                {"role": "system", "content": "你是一位擅长需求提炼和诗意表达的分析专家。你能准确理解问卷内容，并用有表现力的语言概括需求。请仔细检查所有五个主题（融资、产业、技术、人才、媒体），确保不遗漏任何需求。只返回JSON格式结果，不添加任何解释。\n\n【格式要求 - 必须严格遵守】\n❌ 绝对不要在句子前面加序号（如 1. / ① / 1、 等）\n❌ 绝对不要用列表/数组格式（如 [\"内容\"]）\n✅ 每个主题的值必须是字符串，不是列表\n✅ 每句话末尾必须加句号\n✅ 直接描述需求内容，句子开头不要任何数字或符号\n✅ 如果某主题无需求，返回空字符串 \"\""},
-                {"role": "user", "content": prompt}
+                {
+                    "role": "system",
+                    "content": (
+                        "你是一位擅长需求提炼和诗意表达的分析专家。"
+                        "你能准确理解问卷内容，并用有表现力的语言概括需求。"
+                        "请仔细检查所有五个主题（融资、产业、技术、人才、媒体），"
+                        "确保不遗漏任何需求。只返回JSON格式结果，不添加任何解释。"
+                        "\n\n【格式要求 - 必须严格遵守】\n"
+                        "❌ 绝对不要在句子前面加序号（如 1. / ① / 1、 等）\n"
+                        "❌ 绝对不要用列表/数组格式（如 [\"内容\"]）\n"
+                        "✅ 每个主题的值必须是字符串，不是列表\n"
+                        "✅ 每句话末尾必须加句号\n"
+                        "✅ 直接描述需求内容，句子开头不要任何数字或符号\n"
+                        "✅ 如果某主题无需求，返回空字符串 \"\""
+                    ),
+                },
+                {"role": "user", "content": prompt},
             ],
             "temperature": 0.3,
             "max_tokens": 2500
         }
-        
+
         headers = {
             "Authorization": f"Bearer {self.config.DEEPSEEK_API_KEY}",
             "Content-Type": "application/json"
         }
-        
+
         try:
             response = self.session.post(
                 url,
@@ -260,21 +275,21 @@ class NeedsExtractor:
                 timeout=self.config.API_TIMEOUT
             )
             response.raise_for_status()
-            
+
             result = response.json()
             content = result['choices'][0]['message']['content'].strip()
-            
+
             logger.debug(f"API响应成功，内容长度: {len(content)}")
             return content
-            
+
         except requests.exceptions.Timeout:
             logger.error("API调用超时")
             raise Exception("API调用超时，请检查网络连接")
         except requests.exceptions.RequestException as e:
             logger.error(f"API调用失败: {str(e)}")
             raise Exception(f"API调用失败: {str(e)}")
-    
-    def _parse_response(self, response: str) -> Dict[str, List[str]]:
+
+    def _parse_response(self, response: str) -> Dict[str, str]:
         """解析AI响应中的JSON"""
         try:
             # 尝试直接解析JSON
@@ -294,25 +309,25 @@ class NeedsExtractor:
             else:
                 logger.warning("无法找到JSON格式数据")
                 return {}
-        
+
         # 后处理：确保格式正确（去除序号、添加句号）
         needs_dict = self._post_process_needs(needs_dict)
         return needs_dict
-    
+
     def _post_process_needs(self, needs_dict: Dict[str, str]) -> Dict[str, str]:
         """后处理需求文本，确保格式正确"""
         processed = {}
         has_changes = False
-        
+
         for theme, text in needs_dict.items():
             if not text or not isinstance(text, str):
                 processed[theme] = ""
                 continue
-            
+
             original = text
             # 去除前面的序号（支持多种格式）
             cleaned = text.strip()
-            
+
             # 匹配并去除各种序号格式：
             # 1. / 1、 / 1) / 1） / ① / 一、 / (1) / 【1】 等
             patterns = [
@@ -323,40 +338,40 @@ class NeedsExtractor:
                 r'^【[0-9]+】\s*',                # 【1】
                 r'^\[[0-9]+\]\s*',                # [1]
             ]
-            
+
             for pattern in patterns:
                 cleaned = re.sub(pattern, '', cleaned)
-            
+
             # 去除可能的前导空格
             cleaned = cleaned.lstrip()
-            
+
             # 确保末尾有句号
             if cleaned and not cleaned.endswith('。'):
                 cleaned += '。'
-            
+
             # 记录修改
             if original != cleaned:
                 has_changes = True
                 logger.info(f"[后处理修正] [{theme}]:")
                 logger.info(f"   原始: {original}")
                 logger.info(f"   修正: {cleaned}")
-            
+
             processed[theme] = cleaned
-        
+
         if has_changes:
             logger.info("[完成] 需求格式后处理完成（已修正序号）")
         else:
             logger.debug("[完成] 需求格式后处理完成（无需修正）")
-        
+
         return processed
-    
+
     def format_result(self, needs: Dict[str, str]) -> str:
         """
         格式化输出结果
-        
+
         Args:
             needs: 提取的需求字典
-            
+
         Returns:
             str: 格式化的文本
         """
@@ -364,19 +379,19 @@ class NeedsExtractor:
         output.append("\n" + "="*70)
         output.append("五大需求提取结果")
         output.append("="*70)
-        
+
         # 统计信息
         themes_with_needs = [k for k, v in needs.items() if v]
-        
-        output.append(f"\n📊 统计信息：")
+
+        output.append("\n📊 统计信息：")
         output.append(f"   - 涉及 {len(themes_with_needs)} 个主题")
         if themes_with_needs:
             output.append(f"   - 主题: {', '.join(themes_with_needs)}")
-        
+
         output.append("\n" + "="*70)
         output.append("详细需求列表")
         output.append("="*70)
-        
+
         # 按顺序显示五大主题
         for theme in ["融资", "产业", "技术", "人才", "媒体"]:
             output.append(f"\n【{theme}】")
@@ -385,13 +400,12 @@ class NeedsExtractor:
                 output.append(f"  {need_text}")
             else:
                 output.append("  (暂无相关需求)")
-        
+
         output.append("\n" + "="*70)
-        
+
         return "\n".join(output)
-    
+
     def __del__(self):
         """清理资源"""
         if hasattr(self, 'session'):
             self.session.close()
-

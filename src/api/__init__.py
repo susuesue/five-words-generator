@@ -2,8 +2,6 @@
 API 模块
 """
 
-from .app import app
+from .app_fastapi import app
 
 __all__ = ['app']
-
-
